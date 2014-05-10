@@ -18,7 +18,6 @@
     #include <malloc.h>
     #include <string>
     #include <vector>
-    #include <Loader.h>
 
     // Define a constant for the value of PI
     #define GL_PI 3.1415f
@@ -28,4 +27,7 @@
 
     #include <gamedata.h>
     #include <gameelement.h>
+
+void keyUp();
+void keyOperations();
 #endif // MAIN_H

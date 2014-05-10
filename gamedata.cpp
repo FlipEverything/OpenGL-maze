@@ -10,19 +10,19 @@ GameData::GameData()
     speed = walkingSpeed;
     isTextureActive = true;
 
-    camera = std::vector<GLdouble>(3, 0.0);
-    center = std::vector<GLdouble>(3, 0.0);
+    camera = std::vector<GLfloat>(3, 0.0);
+    center = std::vector<GLfloat>(3, 0.0);
 
-    camera[0] = sizeX*3/2;
-    camera[1] = -50;
-    camera[2] = sizeX;
+    camera[0] = sizeX*3/2; //x +
+    camera[1] = -sizeZ; //z -
+    camera[2] = sizeY; //y +
 
-    center[0] = sizeX*3/2;
-    center[1] = sizeX;
-    center[2] = sizeX;
+    center[0] = camera[0]; //x
+    center[1] = -camera[1]; //z
+    center[2] = camera[2]; //y
 
-    wall = new GameElement();
-    floor = new GameElement();
+    numberOfTextures = 0;
+    currentTexture = 0;
 }
 
 GameData::~GameData()
@@ -72,10 +72,56 @@ void GameData::readMaze()
     }
 }
 
+/**
+ * @brief GenerateVertices Read the maze array then draw it.
+ */
+void GameData::generateCubes()
+{
+
+    // Draw the maze
+      int count = 0;
+      for (int i=0; i<mazeHeight; i++)
+      {
+          for (int j=0; j<mazeWidth; j++)
+          {
+              // Render every cube of the maze
+              if (mazeArray[i*mazeWidth+j]==1)
+              {
+                  // Sides of the cube
+                  int front[] = {0,1,0, 0,1,1, 1,1,1, 1,1,0};
+                  int top[] = {0,1,1, 0,0,1, 1,0,1, 1,1,1};
+                  int left[] = {0,0,0, 0,0,1, 0,1,1, 0,1,0};
+                  int right[] = {1,1,0, 1,1,1, 1,0,1, 1,0,0};
+                  int back[] = {1,0,0, 1,0,1, 0,0,1, 0,0,0};
+
+                  // Call the vertex generator
+
+                  wall.GenerateSide(front, i, j, count++, -1, sizeX, sizeY, sizeZ);
+                  wall.GenerateSide(top, i, j, count++, 2, sizeX, sizeY, sizeZ);
+                  wall.GenerateSide(left, i, j, count++, -1, sizeX, sizeY, sizeZ);
+                  wall.GenerateSide(right, i, j, count++, -3, sizeX, sizeY, sizeZ);
+                  wall.GenerateSide(back, i, j, count++, 2, sizeX, sizeY, sizeZ);
+              }
+
+          }
+      }
+
+      int floorCount = 0;
+      // Draw the floor
+      // width x height pieces
+      for (int i=0; i<mazeHeight; i++)
+      {
+          for (int j=0; j<mazeWidth; j++)
+          {
+              // Draw a panel for the every block of the maze
+              int floor_side[] = {0,1,0, 0,0,0, 1,0,0, 1,1,0};
+              floor.GenerateSide(floor_side, i, j, floorCount++, 2, sizeX, sizeY, sizeZ);
+          }
+      }
+
+}
+
 void GameData::genTextures(int numberOfTextures){
-    this->numberOfTextures = numberOfTextures;
-    this->currentTexture = 0;
-    textures = new GLuint[numberOfTextures];
 
     // ask opengl to create textures
     glGenTextures(numberOfTextures, textures);

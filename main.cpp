@@ -55,146 +55,25 @@ GLfloat specular[] = { 1.0f, 1.0f, 1.0f, 1.0f};
 GLfloat specref[] =  { 1.0f, 1.0f, 1.0f, 1.0f };
 GLfloat lightPos[] = { 0.0f, 100.0f, 800.0f, 1.0f };
 
-Loader loader[2];
+bool* keyStates = new bool[256]();
+bool running;
 
 /**
  * @brief loadTextures Load the textures
  */
 void loadTextures() {
-    int numberOfTextures = 2;
+    int numberOfTextures = 3;
     int currentTexture = 0;
     maze.genTextures(numberOfTextures);
 
     currentTexture = maze.loadTexture("texture/stone.png");
-    maze.wall->setTextureId(currentTexture);
+    maze.wall.setTextureId(currentTexture);
 
     currentTexture = maze.loadTexture("texture/grass.png");
-    maze.floor->setTextureId(currentTexture);
-}
+    maze.floor.setTextureId(currentTexture);
 
-/**
- * @brief GenerateSide Generate vertex, index, texture coordinate for one side of the cube
- * @param coords Bit coordinates for the side generation (one side of the cube: 4 vertex)
- * @param i Current position in the maze
- * @param j Current position in the maze
- * @param count number of the current element
- */
-void GenerateSide(int coords[], int i, int j, int count, int orientation, GameElement* element){
-    int x, y, z, index, texture;
-
-    // Vertex coordinates
-    for (int k=0;k<4;k++) // 1 side - 4 vertex
-    {
-        x = j * maze.sizeX + (maze.sizeX * coords[k*3]);
-        y = i * maze.sizeY + (maze.sizeY * coords[k*3+1]);
-        z = coords[k*3+2] * maze.sizeZ;
-        element->getVertices()->push_back( x ); // x coord
-        element->getVertices()->push_back( y ); // y coord
-        element->getVertices()->push_back( z ); // z coord
-        if (DEBUG) { cout << "Vertex " <<  " x: " << x << " y: " << y << "  z: " << z << "\n"; }
-
-        // Normalvector coordinates
-        if (orientation==0){
-            element->getNormals()->push_back(1.0);
-            element->getNormals()->push_back(0.0);
-            element->getNormals()->push_back(0.0);
-        } else if (orientation==1){
-            element->getNormals()->push_back(0.0);
-            element->getNormals()->push_back(1.0);
-            element->getNormals()->push_back(0.0);
-        } else if (orientation==2){
-            element->getNormals()->push_back(0.0);
-            element->getNormals()->push_back(0.0);
-            element->getNormals()->push_back(1.0);
-        } else if (orientation==-1){
-            element->getNormals()->push_back(-1.0);
-            element->getNormals()->push_back(0.0);
-            element->getNormals()->push_back(0.0);
-        } else if (orientation==-2){
-            element->getNormals()->push_back(0.0);
-            element->getNormals()->push_back(0.0);
-            element->getNormals()->push_back(-1.0);
-        } else if (orientation==-3){
-            element->getNormals()->push_back(0.0);
-            element->getNormals()->push_back(-1.0);
-            element->getNormals()->push_back(0.0);
-        }
-
-    }
-
-    // Index coordinates
-    int indicePattern[] = {0,1,2, 2,3,0}; // Order of the vertexes  (sequence of drawing)
-    if (DEBUG) { cout << "Index: "; }
-    for (int k=0;k<6;k++)
-    {
-        index = indicePattern[k] + count * 4;
-        element->getIndices()->push_back( index );
-        if (DEBUG) { cout << index << " "; }
-    }
-    if (DEBUG) { cout << "\n "; }
-
-
-    // Texture coordinates
-    int texturePattern[] = {0,0, 0,1, 1,1, 1,0}; // Pairing the side vertexes to the image corners
-
-    if (DEBUG) { cout << "Texture: "; }
-    for (int k=0;k<8;k++)
-    {
-        texture = texturePattern[k];
-        element->getTexCoords()->push_back( texture );
-        if (DEBUG) { cout << texture << " "; }
-    }
-    if (DEBUG) { cout << "\n "; }
-
-}
-
-/**
- * @brief GenerateVertices Read the maze array then draw it.
- */
-void GenerateCubes()
-{
-
-    // Draw the maze
-      int count = 0;
-      for (int i=0; i<maze.mazeHeight; i++)
-      {
-          for (int j=0; j<maze.mazeWidth; j++)
-          {
-              if (DEBUG) { cout << "Maze input: " << "(i: " << i << ") (j: " << j << ") = " << maze.mazeArray[i*maze.mazeWidth+j] << "\n"; }
-              // Render every cube of the maze
-              if (maze.mazeArray[i*maze.mazeWidth+j]==1)
-              {
-                  // Sides of the cube
-                  int front[] = {0,1,0, 0,1,1, 1,1,1, 1,1,0};
-                  int top[] = {0,1,1, 0,0,1, 1,0,1, 1,1,1};
-                  int left[] = {0,0,0, 0,0,1, 0,1,1, 0,1,0};
-                  int right[] = {1,1,0, 1,1,1, 1,0,1, 1,0,0};
-                  int back[] = {1,0,0, 1,0,1, 0,0,1, 0,0,0};
-
-                  // Call the vertex generator
-                  GenerateSide(front, i, j, count++, -1, maze.wall);
-                  GenerateSide(top, i, j, count++, 2, maze.wall);
-                  GenerateSide(left, i, j, count++, -1, maze.wall);
-                  GenerateSide(right, i, j, count++, -3, maze.wall);
-                  GenerateSide(back, i, j, count++, 2, maze.wall);
-              }
-
-          }
-      }
-
-      int floorCount = 0;
-      // Draw the floor
-      // width x height pieces
-      if (DEBUG) { cout << "\n\nFloor:\n"; }
-      for (int i=0; i<maze.mazeHeight; i++)
-      {
-          for (int j=0; j<maze.mazeWidth; j++)
-          {
-              // Draw a panel for the every block of the maze
-              int floor[] = {0,1,0, 0,0,0, 1,0,0, 1,1,0};
-              GenerateSide(floor, i, j, floorCount++, 2, maze.floor);
-          }
-      }
+    currentTexture = maze.loadTexture("texture/char.png");
+    maze.player.setTextureId(currentTexture);
 }
 
 /**
@@ -224,7 +103,7 @@ void ChangeSizePerspective(GLsizei w, GLsizei h) {
                     1000.0     // zFar
                     );
 
-    gluLookAt(  maze.camera[0], maze.camera[1], maze.camera[2], // camera
+    gluLookAt(  maze.camera[0], maze.camera[1], maze.camera[2], // eye / camera
                 maze.center[0], maze.center[1], maze.center[2], // center
                 0.0, 0.0, 1.0                                   // up
                 );
@@ -239,6 +118,7 @@ void ChangeSizePerspective(GLsizei w, GLsizei h) {
  */
 void RenderScene(void)
 {
+    keyOperations();
     if (!maze.isTextureActive) { glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); } else { glPolygonMode( GL_FRONT_AND_BACK, GL_FILL ); }
 
     // Move the camera every scene
@@ -255,8 +135,9 @@ void RenderScene(void)
 
 
     // draw the elements
-    maze.wall->render(maze.textures); // wall
-    maze.floor->render(maze.textures); // floor
+    maze.wall.render(maze.textures); // wall
+    maze.floor.render(maze.textures); // floor
+    maze.player.render(maze.textures); // player
 
     glDisableClientState(GL_NORMAL_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -304,7 +185,22 @@ void SetupRC()
     glEnable(GL_CULL_FACE);
 
 
-    GenerateCubes();
+    maze.generateCubes();
+    maze.player.load("model/MinecraftPlayer.obj");
+
+    //maze.player.move(maze.camera[0],0, maze.camera[2]);
+
+
+    //maze.player->printVector(maze.player->getIndices());
+    //cout << endl << endl;
+    //maze.player->printVector(maze.player->getVertices());
+                            // cout << endl << endl;
+    maze.player.printVector(maze.player.getTexCoords(),2);
+    //cout << endl << endl;
+   //maze.player->printVector(maze.player->getNormals());
+
+
+
     glewInit();
 
     glClearColor( 0.878f, 0.878f, 0.878f, 1.0f ); //background
@@ -323,35 +219,28 @@ void SetupRC()
 void SpecialKeys(int key, int x, int y)
 {
 
-    GLfloat dirX = maze.camera[0] - maze.center[0];
-    GLfloat dirZ = maze.camera[1] - maze.center[1];
-    // movement speed
-    GLdouble length = sqrt(dirX * dirX + dirZ * dirZ) / maze.speed;
+    GLfloat dirX = 0;
+    GLfloat dirZ = 0;
 
     // arrow keys
-    if(key == GLUT_KEY_UP) { // move
-        maze.center[0] -= dirX / length;
-        maze.center[1] -= dirZ / length;
-        maze.camera[0] -= dirX / length;
-        maze.camera[1] -= dirZ / length;
+    /*if(key == GLUT_KEY_UP) { // move
+        dirZ = maze.sizeZ/maze.speed;
     }
 
     if(key == GLUT_KEY_DOWN) { // move
-        maze.center[0] += dirX / length;
-        maze.center[1] += dirZ / length;
-        maze.camera[0] += dirX / length;
-        maze.camera[1] += dirZ / length;
+        dirZ = -maze.sizeZ/maze.speed;
+    }*/
+
+    if(key == GLUT_KEY_LEFT) { // move
+        dirX = -maze.sizeX/maze.speed;
     }
 
-    if(key == GLUT_KEY_LEFT) { // rotare
-        maze.center[0] += dirZ / (length / 2);
-        maze.center[1] -= dirX / (length / 2);
+    if(key == GLUT_KEY_RIGHT) { // move
+        dirX = maze.sizeX/maze.speed;
     }
 
-    if(key == GLUT_KEY_RIGHT) { // rotate
-        maze.center[0] -= dirZ / (length / 2);
-        maze.center[1] += dirX / (length / 2);
-    }
+    maze.center[0] += dirX;
+    maze.center[1] += dirZ;
 
     // F1: switch from fps to upper camera (and backwards)
     if(key == GLUT_KEY_F1) {
@@ -405,29 +294,44 @@ void ChangeSize(int w, int h)
 
 void Keyboard(unsigned char key, int x, int y)
 {
-  // ...
-  int state;
+  keyStates[key] = true;
+}
 
-  printf("Billentyu lenyomva, kodja %c, pozicio (%d,%d). ", key, x, y);
-  state = glutGetModifiers();
+void keyUp (unsigned char key, int x, int y)
+{
+    keyStates[key] = false;
+}
 
-  if(state & GLUT_ACTIVE_SHIFT){
-    printf("SHIFT lenyomva. ");
-    maze.speed = maze.runningSpeed;
-  } else {
-    maze.speed = maze.walkingSpeed;
-  }
+void keyOperations(){
+    GLfloat dirX = 0;
+    GLfloat dirZ = 0;
 
-  if(state & GLUT_ACTIVE_CTRL)
-    printf("CTRL lenyomva. ");
-  if(state & GLUT_ACTIVE_ALT)
-    printf("ALT lenyomva. ");
-  printf("\n");
-  fflush(stdout);
+    int speed = maze.speed;
+
+    // arrow keys
+    if(keyStates['w']) { // move
+        dirZ = maze.sizeZ/speed;
+    }
+
+    if(keyStates['s']) { // move
+        dirZ = -maze.sizeZ/speed;
+    }
+
+    if(keyStates['a']) { // move
+        dirX = -maze.sizeX/speed;
+    }
+
+    if(keyStates['d']) { // move
+        dirX = maze.sizeX/speed;
+    }
 
 
+    maze.camera[0] += dirX;
+    maze.camera[1] += dirZ;
 
-  glutPostRedisplay();
+
+    maze.center[0] += dirX;
+    maze.center[1] += dirZ;
 }
 
 void Timer(int value)
@@ -451,6 +355,7 @@ int main(int argc, char* argv[])
     glutReshapeFunc(ChangeSizePerspective); // Perspektiv vetites
     glutSpecialFunc(SpecialKeys);
     glutKeyboardFunc(Keyboard);
+    glutKeyboardUpFunc(keyUp);
     glutTimerFunc(100, Timer, 1);
     glutDisplayFunc(RenderScene);
     SetupRC();

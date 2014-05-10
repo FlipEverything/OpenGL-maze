@@ -21,17 +21,17 @@
 #include <stdio.h>
 #include <iostream>
 #include <gameelement.h>
+#include <main.h>
 
-#define DEBUG false
 using namespace std;
 
 class GameData
 {
 public:
     // object sizes
-    const static float sizeX = 50.0f; // width
-    const static float sizeY = 50.0f; // height
-    const static float sizeZ = 50.0f; // length
+    const static float sizeX = 2.0f; // width
+    const static float sizeY = 2.0f; // height
+    const static float sizeZ = 4.0f; // length
 
     //window
     const static int windowHeight = 800;
@@ -45,9 +45,9 @@ public:
     const static int triangleBySide = 2;
     const static int indexCount = 36;
     const static int textureCount = 8;
-    const static int runningSpeed = 3;
-    const static int walkingSpeed = 5;
-    const static GLfloat upperViewHeight = 800.0;
+    const static int runningSpeed = 4;
+    const static int walkingSpeed = 8;
+    const static GLfloat upperViewHeight = 20.0;
 
     // maze
     int *mazeArray; // the maze (1 / 0) bit-matrix
@@ -56,26 +56,29 @@ public:
     int mazeBlockCount; // number of blocks (1)
 
     //camera
-    vector<GLdouble> camera;
-    vector<GLdouble> center;
-    vector<GLdouble> backupCamera;
-    vector<GLdouble> backupCenter;
+    vector<GLfloat> camera;
+    vector<GLfloat> center;
+    vector<GLfloat> backupCamera;
+    vector<GLfloat> backupCenter;
     int speed;
     bool isUpperView;
     bool isTextureActive;
 
-    GameElement* wall;
-    GameElement* floor;
+    GameElement wall;
+    GameElement floor;
+    GameElement player;
 
-    GLuint *textures;
+    GLuint textures[];
     int numberOfTextures;
     int currentTexture;
 
     GameData();
     ~GameData();
     void readMaze();
+    void generateCubes();
     int loadTexture(const char *fileName);
     void genTextures(int numberOfTextures);
+
 };
 
 #endif // GAMEDATA_H
