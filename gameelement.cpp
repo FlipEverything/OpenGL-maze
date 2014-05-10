@@ -44,12 +44,7 @@ void GameElement::move(GLfloat x, GLfloat y, GLfloat z)
     }
 }
 
-
-GameElement::GameElement()
-{
-    textureId = 0;
-}
-
+GameElement::GameElement() {}
 GameElement::~GameElement() { }
 
 void GameElement::render(GLuint textures[])
@@ -133,6 +128,7 @@ void GameElement::GenerateSide(int coords[], int i, int j, int count, int orient
 
 
 bool GameElement::load(const char *filename){
+    int val;
     vector< vec3 > temp_vertices;
     vector< vec2 > temp_uvs;
     vector< vec3 > temp_normals;
@@ -154,24 +150,19 @@ bool GameElement::load(const char *filename){
             // else : parse lineHeader
             if ( strcmp( lineHeader, "v" ) == 0 ){
                 vec3 vertex;
-                fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z );
+                val = fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z );
                 temp_vertices.push_back(vertex);
                 vertices.push_back(vertex.x);
                 vertices.push_back(vertex.y);
                 vertices.push_back(vertex.z);
             }else if ( strcmp( lineHeader, "vt" ) == 0 ){
                 vec2 uv;
-                fscanf(file, "%f %f\n", &uv.x, &uv.y );
+                val = fscanf(file, "%f %f\n", &uv.x, &uv.y );
                 temp_uvs.push_back(uv);
-                texCoords.push_back(uv.x);
-                texCoords.push_back(uv.y);
             }else if ( strcmp( lineHeader, "vn" ) == 0 ){
                 vec3 normal;
-                fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z );
+                val = fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z );
                 temp_normals.push_back(normal);
-                normals.push_back(normal.x);
-                normals.push_back(normal.y);
-                normals.push_back(normal.z);
             }else if ( strcmp( lineHeader, "f" ) == 0 ){
                 unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
                 int matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2] );
@@ -192,19 +183,40 @@ bool GameElement::load(const char *filename){
             }else{
                 // Probably a comment, eat up the rest of the line
                 char stupidBuffer[1000];
-                fgets(stupidBuffer, 1000, file);
+                char* ignore = fgets(stupidBuffer, 1000, file);
             }
 
         }
 
         // For each vertex of each triangle
         for( unsigned int i=0; i<vertexIndices.size(); i++ ){
-            getIndices().push_back(vertexIndices[i]-1);
+            // Get the indices of its attributes
+            //unsigned int vertexIndex = vertexIndices[i];
+            unsigned int uvIndex = uvIndices[i];
+            unsigned int normalIndex = normalIndices[i];
+
+            // Get the attributes thanks to the index
+            //vec3 vertex = temp_vertices[ vertexIndex-1 ];
+            vec2 uv = temp_uvs[ uvIndex-1 ];
+            vec3 normal = temp_normals[ normalIndex-1 ];
+
+            // Put the attributes in buffers
+            normals.push_back(normal.x);
+            normals.push_back(normal.y);
+            normals.push_back(normal.z);
+
+            texCoords.push_back(uv.x);
+            texCoords.push_back(uv.y);
+
+
+            indices.push_back(vertexIndices[i]-1);
 
         }
 
 
     }
+
+    return true;
 }
 
 

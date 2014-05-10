@@ -70,13 +70,12 @@ public:
 
     GLuint textures[];
     int numberOfTextures;
-    int currentTexture;
 
     GameData();
     ~GameData();
     void readMaze();
     void generateCubes();
-    int loadTexture(const char *fileName);
+    void loadTexture(const char *fileName, int textureId);
     void genTextures(int numberOfTextures);
 
 };

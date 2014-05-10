@@ -22,7 +22,6 @@ GameData::GameData()
     center[2] = camera[2]; //y
 
     numberOfTextures = 0;
-    currentTexture = 0;
 }
 
 GameData::~GameData()
@@ -127,20 +126,18 @@ void GameData::genTextures(int numberOfTextures){
     glGenTextures(numberOfTextures, textures);
 }
 
-int GameData::loadTexture(const char *fileName)
+void GameData::loadTexture(const char *fileName, int textureId)
 {
     int twidth, theight;
     // load picture with soil
     unsigned char* image = SOIL_load_image(fileName, &twidth, &theight, 0, SOIL_LOAD_RGB);
 
     // bind it
-    glBindTexture(GL_TEXTURE_2D, textures[currentTexture]);
+    glBindTexture(GL_TEXTURE_2D, textures[textureId]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, twidth, theight, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     delete image;
-
-    return currentTexture++;
 }

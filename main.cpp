@@ -66,14 +66,14 @@ void loadTextures() {
     int currentTexture = 0;
     maze.genTextures(numberOfTextures);
 
-    currentTexture = maze.loadTexture("texture/stone.png");
-    maze.wall.setTextureId(currentTexture);
+    maze.loadTexture("texture/stone.png", currentTexture);
+    maze.wall.setTextureId(currentTexture++);
 
-    currentTexture = maze.loadTexture("texture/grass.png");
-    maze.floor.setTextureId(currentTexture);
+    maze.loadTexture("texture/grass.png", currentTexture);
+    maze.floor.setTextureId(currentTexture++);
 
-    currentTexture = maze.loadTexture("texture/char.png");
-    maze.player.setTextureId(currentTexture);
+    maze.loadTexture("texture/char.png", currentTexture);
+    maze.player.setTextureId(currentTexture++);
 }
 
 /**
@@ -185,27 +185,18 @@ void SetupRC()
     glEnable(GL_CULL_FACE);
 
 
+    loadTextures();
     maze.generateCubes();
     maze.player.load("model/MinecraftPlayer.obj");
 
-    //maze.player.move(maze.camera[0],0, maze.camera[2]);
 
-
-    //maze.player->printVector(maze.player->getIndices());
-    //cout << endl << endl;
-    //maze.player->printVector(maze.player->getVertices());
-                            // cout << endl << endl;
     maze.player.printVector(maze.player.getTexCoords(),2);
-    //cout << endl << endl;
-   //maze.player->printVector(maze.player->getNormals());
-
 
 
     glewInit();
 
     glClearColor( 0.878f, 0.878f, 0.878f, 1.0f ); //background
 
-    loadTextures();
 
     glEnable(GL_TEXTURE_2D);
 }
