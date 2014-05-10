@@ -38,25 +38,9 @@
  */
 
 
-#include "main.h"
-
-using namespace std;
+#include <main.h>
 
 GameData maze;
-
-vector<GLfloat>* wallVertices;
-vector<GLuint>* wallIndices;
-vector<GLfloat>* wallTexCoords;
-vector<GLfloat>* wallNormals;
-
-vector<GLfloat>* floorVertices;
-vector<GLuint>* floorIndices;
-vector<GLfloat>* floorTexCoords;
-vector<GLfloat>* floorNormals;
-
-// textures
-static const int n = 2;
-GLuint *textures = new GLuint[n];
 
 GLfloat glTime;
 
@@ -73,89 +57,19 @@ GLfloat lightPos[] = { 0.0f, 100.0f, 800.0f, 1.0f };
 
 Loader loader[2];
 
-
-/**
- * @brief GameData::readMaze Read the maze (bit matrix) from a text file.
- */
-void GameData::readMaze()
-{
-    string line;
-    string temp;
-    ifstream ifs("maze.txt");
-    getline(ifs, line); // first line: width height
-
-    istringstream iss(line);
-
-    iss >> temp;
-    mazeWidth = atoi(temp.c_str());
-    iss >> temp;
-    mazeHeight = atoi(temp.c_str());
-
-    this->mazeArray = (int *)malloc(sizeof(int) * mazeWidth * mazeHeight); // allocating memory space for the mazeArray
-    char *lineChar;
-
-    int j = 0;
-    while (getline(ifs, line)) // read the file line by line
-    {
-        lineChar = (char*)line.c_str(); // string to character array (one number - one element of the maze)
-
-        for (int i=0; i<mazeWidth; i++)
-        {
-            int data = lineChar[i] - '0'; // convert to number
-            this->mazeArray[j*mazeWidth+i] = data;
-            if (data==1)
-            {
-                mazeBlockCount++; // count the number of blocks (wall)
-            }
-            if (DEBUG) { cout << this->mazeArray[j*mazeWidth+i]; }
-        }
-        if (DEBUG) { cout << "\n"; }
-        j++;
-    }
-}
-
-void BitmapText(GLfloat x, GLfloat y, char *string)
-{
-  int len, i;
-  glRasterPos2f(x, y);
-  len = (int) strlen (string);
-  for (i = 0; i < len; i++){
-    glutBitmapCharacter (GLUT_BITMAP_HELVETICA_18, string[i]);
-  }
-}
-
 /**
  * @brief loadTextures Load the textures
  */
 void loadTextures() {
-    int twidth, theight;
+    int numberOfTextures = 2;
+    int currentTexture = 0;
+    maze.genTextures(numberOfTextures);
 
-    // ask opengl to create textures
-    glGenTextures(n, textures);
+    currentTexture = maze.loadTexture("texture/stone.png");
+    maze.wall->setTextureId(currentTexture);
 
-    // load picture with soil
-    unsigned char* image = SOIL_load_image("texture/stone.png", &twidth, &theight, 0, SOIL_LOAD_RGB);
-
-    // bind it
-    glBindTexture(GL_TEXTURE_2D, textures[0]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, twidth, theight, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-    delete image;
-
-    // load grass
-    image = SOIL_load_image("texture/grass.png", &twidth, &theight, 0, SOIL_LOAD_RGB);
-    glBindTexture(GL_TEXTURE_2D, textures[1]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, twidth, theight, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-
-    // cleanup
-    delete image;
+    currentTexture = maze.loadTexture("texture/grass.png");
+    maze.floor->setTextureId(currentTexture);
 }
 
 /**
@@ -165,7 +79,7 @@ void loadTextures() {
  * @param j Current position in the maze
  * @param count number of the current element
  */
-void GenerateSide(int coords[], int i, int j, int count, int orientation, vector<GLfloat>* vertices, vector<GLuint>* indices, vector<GLfloat>* texCoords, vector<GLfloat>* normals){
+void GenerateSide(int coords[], int i, int j, int count, int orientation, GameElement* element){
     int x, y, z, index, texture;
 
     // Vertex coordinates
@@ -174,36 +88,36 @@ void GenerateSide(int coords[], int i, int j, int count, int orientation, vector
         x = j * maze.sizeX + (maze.sizeX * coords[k*3]);
         y = i * maze.sizeY + (maze.sizeY * coords[k*3+1]);
         z = coords[k*3+2] * maze.sizeZ;
-        vertices->push_back( x ); // x coord
-        vertices->push_back( y ); // y coord
-        vertices->push_back( z ); // z coord
+        element->getVertices()->push_back( x ); // x coord
+        element->getVertices()->push_back( y ); // y coord
+        element->getVertices()->push_back( z ); // z coord
         if (DEBUG) { cout << "Vertex " <<  " x: " << x << " y: " << y << "  z: " << z << "\n"; }
 
         // Normalvector coordinates
         if (orientation==0){
-            normals->push_back(1.0);
-            normals->push_back(0.0);
-            normals->push_back(0.0);
+            element->getNormals()->push_back(1.0);
+            element->getNormals()->push_back(0.0);
+            element->getNormals()->push_back(0.0);
         } else if (orientation==1){
-            normals->push_back(0.0);
-            normals->push_back(1.0);
-            normals->push_back(0.0);
+            element->getNormals()->push_back(0.0);
+            element->getNormals()->push_back(1.0);
+            element->getNormals()->push_back(0.0);
         } else if (orientation==2){
-            normals->push_back(0.0);
-            normals->push_back(0.0);
-            normals->push_back(1.0);
+            element->getNormals()->push_back(0.0);
+            element->getNormals()->push_back(0.0);
+            element->getNormals()->push_back(1.0);
         } else if (orientation==-1){
-            normals->push_back(-1.0);
-            normals->push_back(0.0);
-            normals->push_back(0.0);
+            element->getNormals()->push_back(-1.0);
+            element->getNormals()->push_back(0.0);
+            element->getNormals()->push_back(0.0);
         } else if (orientation==-2){
-            normals->push_back(0.0);
-            normals->push_back(0.0);
-            normals->push_back(-1.0);
+            element->getNormals()->push_back(0.0);
+            element->getNormals()->push_back(0.0);
+            element->getNormals()->push_back(-1.0);
         } else if (orientation==-3){
-            normals->push_back(0.0);
-            normals->push_back(-1.0);
-            normals->push_back(0.0);
+            element->getNormals()->push_back(0.0);
+            element->getNormals()->push_back(-1.0);
+            element->getNormals()->push_back(0.0);
         }
 
     }
@@ -214,7 +128,7 @@ void GenerateSide(int coords[], int i, int j, int count, int orientation, vector
     for (int k=0;k<6;k++)
     {
         index = indicePattern[k] + count * 4;
-        indices->push_back( index );
+        element->getIndices()->push_back( index );
         if (DEBUG) { cout << index << " "; }
     }
     if (DEBUG) { cout << "\n "; }
@@ -227,7 +141,7 @@ void GenerateSide(int coords[], int i, int j, int count, int orientation, vector
     for (int k=0;k<8;k++)
     {
         texture = texturePattern[k];
-        texCoords->push_back( texture );
+        element->getTexCoords()->push_back( texture );
         if (DEBUG) { cout << texture << " "; }
     }
     if (DEBUG) { cout << "\n "; }
@@ -258,11 +172,11 @@ void GenerateCubes()
                   int back[] = {1,0,0, 1,0,1, 0,0,1, 0,0,0};
 
                   // Call the vertex generator
-                  GenerateSide(front, i, j, count++, -1, wallVertices, wallIndices, wallTexCoords, wallNormals);
-                  GenerateSide(top, i, j, count++, 2, wallVertices, wallIndices, wallTexCoords, wallNormals);
-                  GenerateSide(left, i, j, count++, -1, wallVertices, wallIndices, wallTexCoords, wallNormals);
-                  GenerateSide(right, i, j, count++, -3, wallVertices, wallIndices, wallTexCoords, wallNormals);
-                  GenerateSide(back, i, j, count++, 2, wallVertices, wallIndices, wallTexCoords, wallNormals);
+                  GenerateSide(front, i, j, count++, -1, maze.wall);
+                  GenerateSide(top, i, j, count++, 2, maze.wall);
+                  GenerateSide(left, i, j, count++, -1, maze.wall);
+                  GenerateSide(right, i, j, count++, -3, maze.wall);
+                  GenerateSide(back, i, j, count++, 2, maze.wall);
               }
 
           }
@@ -278,7 +192,7 @@ void GenerateCubes()
           {
               // Draw a panel for the every block of the maze
               int floor[] = {0,1,0, 0,0,0, 1,0,0, 1,1,0};
-              GenerateSide(floor, i, j, floorCount++, 2, floorVertices, floorIndices, floorTexCoords, floorNormals);
+              GenerateSide(floor, i, j, floorCount++, 2, maze.floor);
           }
       }
 }
@@ -340,26 +254,9 @@ void RenderScene(void)
     glEnableClientState(GL_NORMAL_ARRAY);
 
 
-    // draw the wall
-        // bind texture (wall)
-        if (maze.isTextureActive) { glBindTexture(GL_TEXTURE_2D, textures[0]); } // texture data
-        glVertexPointer(3, GL_FLOAT, 0, wallVertices->data()); // vertex
-        glTexCoordPointer(2, GL_FLOAT, 0, wallTexCoords->data()); // texture coordinate
-        glNormalPointer(GL_FLOAT, 0, wallNormals->data()); // normalvector
-        // render the vertex array
-        glDrawElements(GL_TRIANGLES, wallIndices->size(), GL_UNSIGNED_INT, wallIndices->data()); // index
-
-
-    // draw the floor
-        // bind the texture (floor)
-        if (maze.isTextureActive) { glBindTexture(GL_TEXTURE_2D, textures[1]); } // texture data
-        glVertexPointer(3, GL_FLOAT, 0, floorVertices->data()); // vertex
-        glTexCoordPointer(2, GL_FLOAT, 0, floorTexCoords->data()); // texture coordinate
-        glNormalPointer(GL_FLOAT, 0, floorNormals->data()); // normalvector
-        // render the vertex array
-        glDrawElements(GL_TRIANGLES, floorIndices->size(), GL_UNSIGNED_INT, floorIndices->data()); // index
-
-
+    // draw the elements
+    maze.wall->render(maze.textures); // wall
+    maze.floor->render(maze.textures); // floor
 
     glDisableClientState(GL_NORMAL_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -543,16 +440,6 @@ void Timer(int value)
 
 int main(int argc, char* argv[])
 {
-    // initialize variables
-    wallIndices = new vector<GLuint>();
-    wallVertices = new vector<GLfloat>();
-    wallTexCoords = new vector<GLfloat>();
-    wallNormals = new vector<GLfloat>();
-
-    floorIndices = new vector<GLuint>();
-    floorVertices = new vector<GLfloat>();
-    floorTexCoords = new vector<GLfloat>();
-    floorNormals = new vector<GLfloat>();
 
     // load the maze
     maze.readMaze();
