@@ -32,7 +32,7 @@ typedef struct {
     GLfloat y;
 } vec2;
 
-class GameElement {
+class Element {
 private:
     vector<GLfloat> vertices;
     vector<GLuint> indices;
@@ -40,8 +40,8 @@ private:
     vector<GLfloat> normals;
     int textureId;
 public:
-    GameElement();
-    ~GameElement();
+    Element();
+    ~Element();
 
     void render(GLuint textures[]);
     void move(GLfloat x, GLfloat y, GLfloat z);

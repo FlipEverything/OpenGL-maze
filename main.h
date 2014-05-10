@@ -26,7 +26,7 @@
     using namespace std;
 
     #include <gamedata.h>
-    #include <gameelement.h>
+    #include <element.h>
 
 void keyUp();
 void keyOperations();

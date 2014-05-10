@@ -1,7 +1,7 @@
-#include "gameelement.h"
+#include "element.h"
 
 
-void GameElement::printVector(vector<GLfloat> value, int numberOfCoords)
+void Element::printVector(vector<GLfloat> value, int numberOfCoords)
 {
     int counter = 1;
     for( vector<GLfloat>::const_iterator i = value.begin(); i != value.end(); ++i)
@@ -14,7 +14,7 @@ void GameElement::printVector(vector<GLfloat> value, int numberOfCoords)
     }
 }
 
-void GameElement::printVector(vector<GLuint> value, int numberOfCoords)
+void Element::printVector(vector<GLuint> value, int numberOfCoords)
 {
     int counter = 1;
     for( vector<GLuint>::const_iterator i = value.begin(); i != value.end(); ++i)
@@ -28,7 +28,7 @@ void GameElement::printVector(vector<GLuint> value, int numberOfCoords)
     }
 }
 
-void GameElement::move(GLfloat x, GLfloat y, GLfloat z)
+void Element::move(GLfloat x, GLfloat y, GLfloat z)
 {
     /*for( vector<GLfloat>::const_iterator i = vertices->begin(); i != vertices->end(); ++i)
     {
@@ -37,17 +37,18 @@ void GameElement::move(GLfloat x, GLfloat y, GLfloat z)
 
     }*/
 
-    for (int i = 0; i < vertices.size(); i++)
+    for (unsigned int i = 0; i < vertices.size(); i+=3)
     {
-        //(&vertices)[i] += 1;
-        cout << vertices[i];
+        vertices[i] += x;
+        vertices[i+1] += y;
+        vertices[i+2] += z;
     }
 }
 
-GameElement::GameElement() {}
-GameElement::~GameElement() { }
+Element::Element() {}
+Element::~Element() { }
 
-void GameElement::render(GLuint textures[])
+void Element::render(GLuint textures[])
 {
     // render the vertex array
     glBindTexture(GL_TEXTURE_2D, textures[textureId]); // texture data
@@ -65,7 +66,7 @@ void GameElement::render(GLuint textures[])
  * @param j Current position in the maze
  * @param count number of the current element
  */
-void GameElement::GenerateSide(int coords[], int i, int j, int count, int orientation, float sizeX, float sizeY, float sizeZ){
+void Element::GenerateSide(int coords[], int i, int j, int count, int orientation, float sizeX, float sizeY, float sizeZ){
     int x, y, z, index, texture;
 
     // Vertex coordinates
@@ -127,8 +128,8 @@ void GameElement::GenerateSide(int coords[], int i, int j, int count, int orient
 }
 
 
-bool GameElement::load(const char *filename){
-    int val;
+bool Element::load(const char *filename){
+    int val = 0;
     vector< vec3 > temp_vertices;
     vector< vec2 > temp_uvs;
     vector< vec3 > temp_normals;
@@ -152,9 +153,6 @@ bool GameElement::load(const char *filename){
                 vec3 vertex;
                 val = fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z );
                 temp_vertices.push_back(vertex);
-                vertices.push_back(vertex.x);
-                vertices.push_back(vertex.y);
-                vertices.push_back(vertex.z);
             }else if ( strcmp( lineHeader, "vt" ) == 0 ){
                 vec2 uv;
                 val = fscanf(file, "%f %f\n", &uv.x, &uv.y );
@@ -170,6 +168,7 @@ bool GameElement::load(const char *filename){
                     printf("File can't be read by our simple parser : ( Try exporting with other options\n");
                 } else {
                     vertexIndices.push_back(vertexIndex[0]);
+                    cout << vertexIndex[0];
                     vertexIndices.push_back(vertexIndex[1]);
                     vertexIndices.push_back(vertexIndex[2]);
                     uvIndices    .push_back(uvIndex[0]);
@@ -184,6 +183,7 @@ bool GameElement::load(const char *filename){
                 // Probably a comment, eat up the rest of the line
                 char stupidBuffer[1000];
                 char* ignore = fgets(stupidBuffer, 1000, file);
+                cerr << "Ignored line: " << ignore << val << endl;
             }
 
         }
@@ -191,12 +191,15 @@ bool GameElement::load(const char *filename){
         // For each vertex of each triangle
         for( unsigned int i=0; i<vertexIndices.size(); i++ ){
             // Get the indices of its attributes
-            //unsigned int vertexIndex = vertexIndices[i];
+            unsigned int vertexIndex = vertexIndices[i];
             unsigned int uvIndex = uvIndices[i];
             unsigned int normalIndex = normalIndices[i];
 
+            cout << vertexIndex << endl;
+
+
             // Get the attributes thanks to the index
-            //vec3 vertex = temp_vertices[ vertexIndex-1 ];
+            vec3 vertex = temp_vertices[ vertexIndex-1 ];
             vec2 uv = temp_uvs[ uvIndex-1 ];
             vec3 normal = temp_normals[ normalIndex-1 ];
 
@@ -208,8 +211,11 @@ bool GameElement::load(const char *filename){
             texCoords.push_back(uv.x);
             texCoords.push_back(uv.y);
 
+            vertices.push_back(vertex.x);
+            vertices.push_back(vertex.y);
+            vertices.push_back(vertex.z);
 
-            indices.push_back(vertexIndices[i]-1);
+            indices.push_back(i);
 
         }
 
@@ -220,52 +226,52 @@ bool GameElement::load(const char *filename){
 }
 
 
-vector<GLfloat> GameElement::getNormals() const
+vector<GLfloat> Element::getNormals() const
 {
     return normals;
 }
 
-void GameElement::setNormals(const vector<GLfloat> &value)
+void Element::setNormals(const vector<GLfloat> &value)
 {
     normals = value;
 }
 
-vector<GLfloat> GameElement::getTexCoords() const
+vector<GLfloat> Element::getTexCoords() const
 {
     return texCoords;
 }
 
-void GameElement::setTexCoords(const vector<GLfloat> &value)
+void Element::setTexCoords(const vector<GLfloat> &value)
 {
     texCoords = value;
 }
 
-vector<GLuint> GameElement::getIndices() const
+vector<GLuint> Element::getIndices() const
 {
     return indices;
 }
 
-void GameElement::setIndices(const vector<GLuint> &value)
+void Element::setIndices(const vector<GLuint> &value)
 {
     indices = value;
 }
 
-vector<GLfloat> GameElement::getVertices() const
+vector<GLfloat> Element::getVertices() const
 {
     return vertices;
 }
 
-void GameElement::setVertices(const vector<GLfloat> &value)
+void Element::setVertices(const vector<GLfloat> &value)
 {
     vertices = value;
 }
 
-int GameElement::getTextureId() const
+int Element::getTextureId() const
 {
     return textureId;
 }
 
-void GameElement::setTextureId(int value)
+void Element::setTextureId(int value)
 {
     textureId = value;
 }

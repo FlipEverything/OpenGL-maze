@@ -20,7 +20,7 @@
 #include <sstream>
 #include <stdio.h>
 #include <iostream>
-#include <gameelement.h>
+#include <element.h>
 #include <main.h>
 
 using namespace std;
@@ -29,8 +29,8 @@ class GameData
 {
 public:
     // object sizes
-    const static float sizeX = 2.0f; // width
-    const static float sizeY = 2.0f; // height
+    const static float sizeX = 4.0f; // width
+    const static float sizeY = 4.0f; // height
     const static float sizeZ = 4.0f; // length
 
     //window
@@ -47,7 +47,7 @@ public:
     const static int textureCount = 8;
     const static int runningSpeed = 4;
     const static int walkingSpeed = 8;
-    const static GLfloat upperViewHeight = 20.0;
+    const static GLfloat upperViewHeight = 15.0;
 
     // maze
     int *mazeArray; // the maze (1 / 0) bit-matrix
@@ -64,9 +64,9 @@ public:
     bool isUpperView;
     bool isTextureActive;
 
-    GameElement wall;
-    GameElement floor;
-    GameElement player;
+    Element wall;
+    Element floor;
+    Element player;
 
     GLuint textures[];
     int numberOfTextures;

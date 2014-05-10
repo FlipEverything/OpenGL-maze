@@ -53,7 +53,7 @@ GLfloat ambientLight[] = { 0.3f, 0.3f, 0.3f, 1.0f };
 GLfloat diffuseLight[] = { 0.7f, 0.7f, 0.7f, 1.0f };
 GLfloat specular[] = { 1.0f, 1.0f, 1.0f, 1.0f};
 GLfloat specref[] =  { 1.0f, 1.0f, 1.0f, 1.0f };
-GLfloat lightPos[] = { 0.0f, 100.0f, 800.0f, 1.0f };
+GLfloat lightPos[] = { 0.0f, -5.0f, 10.0f, 1.0f };
 
 bool* keyStates = new bool[256]();
 bool running;
@@ -188,15 +188,12 @@ void SetupRC()
     loadTextures();
     maze.generateCubes();
     maze.player.load("model/MinecraftPlayer.obj");
-
-
-    maze.player.printVector(maze.player.getTexCoords(),2);
+    //maze.player.printVector(maze.player.getTexCoords(),2);
+    maze.player.move(maze.camera[0], 0, 0);
 
 
     glewInit();
-
     glClearColor( 0.878f, 0.878f, 0.878f, 1.0f ); //background
-
 
     glEnable(GL_TEXTURE_2D);
 }
@@ -320,9 +317,10 @@ void keyOperations(){
     maze.camera[0] += dirX;
     maze.camera[1] += dirZ;
 
-
     maze.center[0] += dirX;
     maze.center[1] += dirZ;
+
+    maze.player.move(dirX, dirZ, 0);
 }
 
 void Timer(int value)

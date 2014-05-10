@@ -14,12 +14,12 @@ GameData::GameData()
     center = std::vector<GLfloat>(3, 0.0);
 
     camera[0] = sizeX*3/2; //x +
-    camera[1] = -sizeZ; //z -
-    camera[2] = sizeY; //y +
+    camera[1] = -sizeZ*2/3; //z -
+    camera[2] = sizeY*6/5; //y +
 
     center[0] = camera[0]; //x
     center[1] = -camera[1]; //z
-    center[2] = camera[2]; //y
+    center[2] = camera[2]-sizeY/2; //y
 
     numberOfTextures = 0;
 }
