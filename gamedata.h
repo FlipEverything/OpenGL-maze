@@ -23,6 +23,7 @@
 #include <main.h>
 #include <element.h>
 
+
 using namespace std;
 
 class GameData
@@ -67,6 +68,10 @@ public:
     Element wall;
     Element floor;
     Element player;
+    Element ball1;
+    Element ball2;
+
+    vector<vec2> balls;
 
     GLuint textures[];
     int numberOfTextures;

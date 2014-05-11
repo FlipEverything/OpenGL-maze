@@ -74,6 +74,10 @@ void loadTextures() {
 
     maze.loadTexture("texture/char.png", currentTexture);
     maze.player.setTextureId(currentTexture++);
+
+    maze.loadTexture("texture/ball.png", currentTexture);
+    maze.ball1.setTextureId(currentTexture);
+    maze.ball2.setTextureId(currentTexture++);
 }
 
 /**
@@ -138,6 +142,8 @@ void RenderScene(void)
     maze.wall.render(maze.textures); // wall
     maze.floor.render(maze.textures); // floor
     maze.player.render(maze.textures); // player
+    maze.ball1.render(maze.textures); // ball1
+    maze.ball2.render(maze.textures); // ball1
 
     glDisableClientState(GL_NORMAL_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -189,10 +195,18 @@ void SetupRC()
     maze.generateCubes();
     maze.wall.calculate();
 
-    maze.player.load("model/MinecraftPlayer.obj");
-    //maze.player.printVector(maze.player.getTexCoords(),2);
+    maze.player.load("model/MinecraftPlayer.obj",true);
+    maze.ball1.load("model/Football.obj", true);
+    maze.ball1.calculate();
+    maze.ball2.load("model/Football.obj", true);
+    maze.ball2.calculate();
 
-    maze.player.move(maze.camera[0], 0.4f, 0, maze.wall.getBoundaryBox(), true);
+    vector< vector<boundary> > b;
+    b.push_back(maze.wall.getBoundaryBox());
+    maze.ball1.move(maze.balls[0].x, maze.balls[0].y, maze.sizeZ/2, b, true);
+    maze.ball2.move(maze.balls[1].x, maze.balls[1].y, maze.sizeZ/2, b, true);
+    maze.player.move(maze.camera[0], 0.4f, 0, b, true);
+    b.clear();
 
     glewInit();
     glClearColor( 0.878f, 0.878f, 0.878f, 1.0f ); //background
@@ -224,15 +238,15 @@ void SpecialKeys(int key, int x, int y)
     if(key == GLUT_KEY_LEFT) { // move
         dirX = -maze.sizeX/20;
 
-        maze.center[1] -= sin(dirX * M_PI / 180) * cos(dirX * M_PI / 180);
-        maze.center[0] -= -cos(dirX * M_PI / 180) * cos(dirX * M_PI / 180);
+        maze.center[1] += sin(dirX * M_PI / 180) * cos(dirX * M_PI / 180);
+        maze.center[0] += -cos(dirX * M_PI / 180) * cos(dirX * M_PI / 180);
     }
 
     if(key == GLUT_KEY_RIGHT) { // move
         dirX = maze.sizeX/20;
 
-        maze.center[1] += sin(dirX * M_PI / 180) * cos(dirX * M_PI / 180);
-        maze.center[0] += -cos(dirX * M_PI / 180) * cos(dirX * M_PI / 180);
+        maze.center[1] -= sin(dirX * M_PI / 180) * cos(dirX * M_PI / 180);
+        maze.center[0] -= -cos(dirX * M_PI / 180) * cos(dirX * M_PI / 180);
     }    
 
 
@@ -323,7 +337,12 @@ void keyOperations(){
 
     if (dirZ!=0 || dirX != 0)
     {
-        bool moved = maze.player.move(dirX, dirZ, 0, maze.wall.getBoundaryBox(), false);
+        vector< vector<boundary> > b;
+        b.push_back(maze.wall.getBoundaryBox());
+        b.push_back(maze.ball1.getBoundaryBox());
+        b.push_back(maze.ball2.getBoundaryBox());
+        bool moved = maze.player.move(dirX, dirZ, 0, b, false);
+        b.clear();
         if (moved)
         {
             maze.camera[0] += dirX;

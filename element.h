@@ -53,11 +53,11 @@ public:
     ~Element();
 
     void render(GLuint textures[]);
-    bool move(GLfloat x, GLfloat y, GLfloat z, vector<boundary> box, bool force);
+    bool move(GLfloat x, GLfloat y, GLfloat z, vector< vector<boundary> > box, bool force);
     void printVector(vector<GLfloat> value, int numberOfCoords);
     void printVector(vector<GLuint> value, int numberOfCoords);
     void GenerateSide(int coords[], int i, int j, int count, int orientation, float sizeX, float sizeY, float sizeZ, bool isBoundary);
-    bool load(const char *filename);
+    bool load(const char *filename, bool isTexture);
 
     vector<GLfloat> getVertices() const;
     void setVertices(const vector<GLfloat> &value);

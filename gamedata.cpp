@@ -101,6 +101,15 @@ void GameData::generateCubes()
                   wall.GenerateSide(right, i, j, count++, -3, sizeX, sizeY, sizeZ,false);
                   wall.GenerateSide(back, i, j, count++, 2, sizeX, sizeY, sizeZ,false);
               }
+              else if  (mazeArray[i*mazeWidth+j]==2)
+              {
+                  GLfloat x = j * sizeX + (sizeX/2);
+                  GLfloat y = i * sizeY + (sizeY/2);
+                  vec2 coord;
+                  coord.x = x;
+                  coord.y = y;
+                  balls.push_back(coord);
+              }
 
           }
       }

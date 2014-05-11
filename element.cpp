@@ -124,13 +124,32 @@ void Element::GenerateSide(int coords[], int i, int j, int count, int orientatio
 }
 
 
-bool Element::load(const char *filename){
+bool Element::load(const char *filename, bool isTexture){
     int val = 0;
     vector< vec3 > temp_vertices;
     vector< vec2 > temp_uvs;
     vector< vec3 > temp_normals;
 
+    vec2 t;
+    if (!isTexture)
+    {
+        t.x = 0;
+        t.y = 0;
+        temp_uvs.push_back(t);
+        t.x = 0;
+        t.y = 1;
+        temp_uvs.push_back(t);
+        t.x = 1;
+        t.y = 0;
+        temp_uvs.push_back(t);
+        t.x = 1;
+        t.y = 1;
+        temp_uvs.push_back(t);
+    }
+
+
     std::vector<unsigned int> vertexIndices, uvIndices, normalIndices;
+
 
     FILE* file = fopen(filename, "r");
     if (file == NULL){
@@ -150,9 +169,12 @@ bool Element::load(const char *filename){
                 val = fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z );
                 temp_vertices.push_back(vertex);
             }else if ( strcmp( lineHeader, "vt" ) == 0 ){
-                vec2 uv;
-                val = fscanf(file, "%f %f\n", &uv.x, &uv.y );
-                temp_uvs.push_back(uv);
+                if (isTexture)
+                {
+                    vec2 uv;
+                    val = fscanf(file, "%f %f\n", &uv.x, &uv.y );
+                    temp_uvs.push_back(uv);
+                }
             }else if ( strcmp( lineHeader, "vn" ) == 0 ){
                 vec3 normal;
                 val = fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z );
@@ -161,10 +183,33 @@ bool Element::load(const char *filename){
                 unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
                 int matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2] );
                 if (matches != 9){
-                    printf("File can't be read by our simple parser : ( Try exporting with other options\n");
+                    //printf("File can't be read by our simple parser : ( Try exporting with other options\n");
+                    int matches = fscanf(file, "%d//%d %d//%d %d//%d\n", &vertexIndex[0], &normalIndex[0], &vertexIndex[1], &normalIndex[1], &vertexIndex[2], &normalIndex[2] );
+                    if (matches != 6 ){
+                        int matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2], &vertexIndex[3], &uvIndex[3], &normalIndex[3] );
+                        vertexIndices.push_back(vertexIndex[0]);
+                        vertexIndices.push_back(vertexIndex[1]);
+                        vertexIndices.push_back(vertexIndex[2]);
+                        vertexIndices.push_back(vertexIndex[3]);
+                        uvIndices    .push_back(uvIndex[0]);
+                        uvIndices    .push_back(uvIndex[1]);
+                        uvIndices    .push_back(uvIndex[2]);
+                        uvIndices    .push_back(uvIndex[3]);
+                        normalIndices.push_back(normalIndex[0]);
+                        normalIndices.push_back(normalIndex[1]);
+                        normalIndices.push_back(normalIndex[2]);
+                        normalIndices.push_back(normalIndex[3]);
+                    } else {
+                        vertexIndices.push_back(vertexIndex[0]);
+                        vertexIndices.push_back(vertexIndex[1]);
+                        vertexIndices.push_back(vertexIndex[2]);
+                        normalIndices.push_back(normalIndex[0]);
+                        normalIndices.push_back(normalIndex[1]);
+                        normalIndices.push_back(normalIndex[2]);
+                    }
+
                 } else {
                     vertexIndices.push_back(vertexIndex[0]);
-                    cout << vertexIndex[0];
                     vertexIndices.push_back(vertexIndex[1]);
                     vertexIndices.push_back(vertexIndex[2]);
                     uvIndices    .push_back(uvIndex[0]);
@@ -184,18 +229,30 @@ bool Element::load(const char *filename){
 
         }
 
-        cout << " asdfasdas" << endl;
+        int k = 0;
         // For each vertex of each triangle
         for( unsigned int i=0; i<vertexIndices.size(); i++ ){
             // Get the indices of its attributes
             unsigned int vertexIndex = vertexIndices[i] -1;
-            unsigned int uvIndex = uvIndices[i] - 1;
+            unsigned int uvIndex = 0;
             unsigned int normalIndex = normalIndices[i] -1;
 
-            // Get the attributes thanks to the index
+
+            if (isTexture)
+            {
+                uvIndex = uvIndices[i] - 1;
+            }
+            else
+            {
+                uvIndex = k++;
+            }
+
             vec3 vertex = temp_vertices[ vertexIndex ];
             vec2 uv = temp_uvs[ uvIndex ];
             vec3 normal = temp_normals[ normalIndex ];
+
+            // Get the attributes thanks to the index
+            cout << uv.x << " " << uv.y << endl;
 
             // Put the attributes in buffers
             normals.push_back(normal.x);
@@ -210,6 +267,8 @@ bool Element::load(const char *filename){
             vertices.push_back(vertex.z);
 
             indices.push_back(i);
+
+            if (k==4) {k = 0;}
 
 
         }
@@ -255,7 +314,7 @@ void Element::calculate(){
         (boundaryBox[i]).center.x = (max.x + min.x) / 2;
         (boundaryBox[i]).center.y = (max.y + min.y) / 2;
         //cout << (boundaryBox[i]).center.x << " " << (boundaryBox[i]).center.y << endl;
-        (boundaryBox[i]).R = sqrt( pow((max.x-(boundaryBox[i]).center.x),2) + pow((max.y-(boundaryBox[i]).center.y),2) *0.75f );
+        (boundaryBox[i]).R = sqrt( pow((max.x-(boundaryBox[i]).center.x),2) + pow((max.y-(boundaryBox[i]).center.y),2) *0.6f );
 
         //cout << (boundaryBox[i]).R << endl;
     }
@@ -300,7 +359,7 @@ void Element::setBoundary()
 }
 
 
-bool Element::move(GLfloat x, GLfloat y, GLfloat z, vector<boundary> box, bool force)
+bool Element::move(GLfloat x, GLfloat y, GLfloat z, vector< vector<boundary> > box, bool force)
 {
     cout << "Moving..." << endl;
     GLfloat d;
@@ -308,11 +367,15 @@ bool Element::move(GLfloat x, GLfloat y, GLfloat z, vector<boundary> box, bool f
     bool moved = false;
 
     vector<GLfloat> temp_vertices;
-
     for (unsigned int i = 0; i < vertices.size(); i++)
     {
         temp_vertices.push_back(vertices[i]);
     }
+
+
+    setBoundary();
+    calculate();
+
 
     for (unsigned int i = 0; i < vertices.size(); i+=3)
     {
@@ -325,33 +388,22 @@ bool Element::move(GLfloat x, GLfloat y, GLfloat z, vector<boundary> box, bool f
         }
     }
 
-    setBoundary();
-    calculate();
 
-    vec3 max;
-    max.x = 0.0f;
-    max.y = 0.0f;
-    for (unsigned int i = 0; i < box.size(); i++)
+    for (unsigned int j=0; j < box.size(); j++)
     {
-        cout << "box: (" << (box[i]).center.x << "," << (box[i]).center.y << ")";
-        d = sqrt ( pow( (box[i]).center.x - (boundaryBox[0]).center.x, 2) + pow((box[i]).center.y - (boundaryBox[0]).center.y, 2));
-        cout << " d: " << d << " R1: " << box[i].R << " R2: " <<  (boundaryBox[0]).R <<  " R1+R2: " << (box[i].R + (boundaryBox[0]).R) << endl;
-        if (d < (box[i].R + (boundaryBox[0]).R) ){
-            intersect = true;
-        }
-        if ( ((box[i]).center.x > max.x) || ((box[i]).center.y > max.y) )
-        {
-            max.x = (box[i]).center.x;
-            max.y = (box[i]).center.y;
-            max.z = (box[i]).R;
-        }
-    }
 
-    for (unsigned int i = 0; i < vertices.size(); i+=3)
-    {
-        if (vertices[i]>max.x+max.z || vertices[i+1]>max.y+max.z)
+        setBoundary();
+        calculate();
+
+        for (unsigned int i = 0; i < box[j].size(); i++)
         {
-            intersect = true;
+            //cout << "box: (" << (box[i]).center.x << "," << (box[i]).center.y << ")";
+            d = sqrt ( pow( (box[j][i]).center.x - (boundaryBox[0]).center.x, 2) + pow((box[j][i]).center.y - (boundaryBox[0]).center.y, 2));
+            //cout << " d: " << d << " R1: " << box[i].R << " R2: " <<  (boundaryBox[0]).R <<  " R1+R2: " << (box[i].R + (boundaryBox[0]).R) << endl;
+            if (d < (box[j][i].R + (boundaryBox[0]).R) ){
+                intersect = true;
+                cout << "Collision detected! (" << (boundaryBox[0]).center.x << "," << (boundaryBox[0]).center.y << ") " << endl;
+            }
         }
     }
 
@@ -364,6 +416,11 @@ bool Element::move(GLfloat x, GLfloat y, GLfloat z, vector<boundary> box, bool f
     } else {
         moved = true;
     }
+
+
+
+
+
 
     /*if (!intersect || force)
     {
