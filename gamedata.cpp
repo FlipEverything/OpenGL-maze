@@ -101,14 +101,14 @@ void GameData::generateCubes()
                   wall.GenerateSide(right, i, j, count++, -3, sizeX, sizeY, sizeZ,false);
                   wall.GenerateSide(back, i, j, count++, 2, sizeX, sizeY, sizeZ,false);
               }
-              else if  (mazeArray[i*mazeWidth+j]==2)
+              else if  (mazeArray[i*mazeWidth+j]==2) // support for the balls
               {
                   GLfloat x = j * sizeX + (sizeX/2);
                   GLfloat y = i * sizeY + (sizeY/2);
                   vec2 coord;
                   coord.x = x;
                   coord.y = y;
-                  balls.push_back(coord);
+                  ballPositions.push_back(coord);
               }
 
           }
@@ -129,12 +129,19 @@ void GameData::generateCubes()
 
 }
 
+/**
+ * @brief GameData::genTextures Ask opengl to create textures
+ * @param numberOfTextures
+ */
 void GameData::genTextures(int numberOfTextures){
-
-    // ask opengl to create textures
     glGenTextures(numberOfTextures, textures);
 }
 
+/**
+ * @brief GameData::loadTexture Load a texture from file to GL buffer
+ * @param fileName the fileName
+ * @param textureId the requested ID
+ */
 void GameData::loadTexture(const char *fileName, int textureId)
 {
     int twidth, theight;

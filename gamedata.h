@@ -68,10 +68,8 @@ public:
     Element wall;
     Element floor;
     Element player;
-    Element ball1;
-    Element ball2;
-
-    vector<vec2> balls;
+    vector<Element> balls;
+    vector<vec2> ballPositions;
 
     GLuint textures[];
     int numberOfTextures;

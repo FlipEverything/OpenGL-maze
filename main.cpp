@@ -11,7 +11,7 @@
  * Fejlesztőkörnyezet: Ubuntu 13.10, Qt Creator (Fordítás Qt-val)
  * Függvénykönyvtárak: GLEW GL glut GLU SOIL
  *
- * A labirintus szerkezetének generálása külön történik, github-on elérhető c alkalmazás segítségével.
+ * A labirintus szerkezetének generálása külön történik, c alkalmazás segítségével.
  * Forrás: https://github.com/ccouzens/maze
  * Az alkalmazást úgy módosítottam, hogy a konzol helyett fájlba írja a kimenetet a megadott formátumban.
  * Első sor: width height\n
@@ -31,9 +31,19 @@
  *  Előre, hátra: mozgás
  * "F1" gomb lenyomásával felülnézeti kameraállás
  *
- * DEBUG konzolra ír
- *
  * További források: openGL wiki, stackoverflow, számítógépes grafika kötelező program
+ *
+ * 2. teljesítés:
+ *
+ * Input fájl módosítása: ahol nincs fal (0), ott el lehet helyezni 2-es írásával egy labdát
+ * Tetszőleges mennyiségű labda
+ *
+ * Ütközés detektálás megvalósítása
+ * Ütközés helyének kiíratása
+ * Ütközés esetén a mozgás megáll
+ * Labirintus szélének figyelése
+ * Objektumok betöltése: labdák és a játékos avatarja
+ * Kameramozgatás
  *
  */
 
@@ -41,9 +51,7 @@
 #include <main.h>
 
 GameData maze;
-
 GLfloat glTime;
-
 GLfloat mouseX = -1.0, mouseY = -1.0;
 GLfloat centerX = 0.0;
 GLfloat centerY = 0.0;
@@ -57,13 +65,15 @@ GLfloat lightPos[] = { 0.0f, -5.0f, 10.0f, 1.0f };
 
 bool* keyStates = new bool[256]();
 bool running;
+int ballTexture;
 
 /**
- * @brief loadTextures Load the textures
+ * @brief loadTextures Loading textures and saving the id for binding
  */
 void loadTextures() {
-    int numberOfTextures = 3;
+    int numberOfTextures = 4;
     int currentTexture = 0;
+    // asking gl
     maze.genTextures(numberOfTextures);
 
     maze.loadTexture("texture/stone.png", currentTexture);
@@ -76,8 +86,8 @@ void loadTextures() {
     maze.player.setTextureId(currentTexture++);
 
     maze.loadTexture("texture/ball.png", currentTexture);
-    maze.ball1.setTextureId(currentTexture);
-    maze.ball2.setTextureId(currentTexture++);
+    ballTexture = currentTexture;
+
 }
 
 /**
@@ -138,12 +148,14 @@ void RenderScene(void)
     glEnableClientState(GL_NORMAL_ARRAY);
 
 
-    // draw the elements
+    // draw the elements, calling render
     maze.wall.render(maze.textures); // wall
     maze.floor.render(maze.textures); // floor
     maze.player.render(maze.textures); // player
-    maze.ball1.render(maze.textures); // ball1
-    maze.ball2.render(maze.textures); // ball1
+    for (unsigned int i=0; i<maze.balls.size(); i++)
+    {
+        maze.balls[i].render(maze.textures); // balls
+    }
 
     glDisableClientState(GL_NORMAL_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -193,19 +205,25 @@ void SetupRC()
 
     loadTextures();
     maze.generateCubes();
-    maze.wall.calculate();
+    maze.wall.calculate(); // generating the bounding shape
 
-    maze.player.load("model/MinecraftPlayer.obj",true);
-    maze.ball1.load("model/Football.obj", true);
-    maze.ball1.calculate();
-    maze.ball2.load("model/Football.obj", true);
-    maze.ball2.calculate();
-
+    // boundaries of the wall
     vector< vector<boundary> > b;
     b.push_back(maze.wall.getBoundaryBox());
-    maze.ball1.move(maze.balls[0].x, maze.balls[0].y, maze.sizeZ/2, b, true);
-    maze.ball2.move(maze.balls[1].x, maze.balls[1].y, maze.sizeZ/2, b, true);
-    maze.player.move(maze.camera[0], 0.4f, 0, b, true);
+
+    // loading models
+    maze.player.load("model/MinecraftPlayer.obj",true); // player
+    for (unsigned int i=0; i<maze.ballPositions.size(); i++)
+    {
+        Element ball;
+        ball.load("model/Football.obj", true);
+        maze.balls.push_back(ball);
+        maze.balls[i].calculate();
+        maze.balls[i].move(maze.ballPositions[i].x, maze.ballPositions[i].y, maze.sizeZ/3, b, true); // moving to the start point
+        maze.balls[i].setTextureId(ballTexture);
+    }
+
+    maze.player.move(maze.camera[0], 0.4f, 0, b, true); // moving player
     b.clear();
 
     glewInit();
@@ -337,11 +355,14 @@ void keyOperations(){
 
     if (dirZ!=0 || dirX != 0)
     {
+        // selecting the vectors for the player object
         vector< vector<boundary> > b;
         b.push_back(maze.wall.getBoundaryBox());
-        b.push_back(maze.ball1.getBoundaryBox());
-        b.push_back(maze.ball2.getBoundaryBox());
-        bool moved = maze.player.move(dirX, dirZ, 0, b, false);
+        for (unsigned int i=0; i<maze.balls.size(); i++)
+        {
+            b.push_back(maze.balls[i].getBoundaryBox());
+        }
+        bool moved = maze.player.move(dirX, dirZ, 0, b, false); // move the player if possible
         b.clear();
         if (moved)
         {

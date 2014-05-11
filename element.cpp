@@ -4,7 +4,11 @@
 Element::Element() {}
 Element::~Element() { }
 
-
+/**
+ * @brief Element::printVector Printing the input vector
+ * @param value the vector
+ * @param numberOfCoords
+ */
 void Element::printVector(vector<GLfloat> value, int numberOfCoords)
 {
     int counter = 1;
@@ -18,6 +22,11 @@ void Element::printVector(vector<GLfloat> value, int numberOfCoords)
     }
 }
 
+/**
+ * @brief Element::printVector Printing the input vector
+ * @param value the vector
+ * @param numberOfCoords
+ */
 void Element::printVector(vector<GLuint> value, int numberOfCoords)
 {
     int counter = 1;
@@ -32,6 +41,10 @@ void Element::printVector(vector<GLuint> value, int numberOfCoords)
     }
 }
 
+/**
+ * @brief Element::render Binding texture and rendering the elements of the array
+ * @param textures texture array with the IDs
+ */
 void Element::render(GLuint textures[])
 {
     // render the vertex array
@@ -69,7 +82,7 @@ void Element::GenerateSide(int coords[], int i, int j, int count, int orientatio
             b.x = x;
             b.y = y;
             //cout << "x: " << x << "y: " << y << endl;
-            box.point.push_back(b);
+            box.point.push_back(b); // saving the coordinates for the boundary rectangle
         }
 
         // Normalvector coordinates
@@ -123,7 +136,12 @@ void Element::GenerateSide(int coords[], int i, int j, int count, int orientatio
 
 }
 
-
+/**
+ * @brief Element::load Loading a model (.obj file)
+ * @param filename The filename
+ * @param isTexture Is texture supported
+ * @return
+ */
 bool Element::load(const char *filename, bool isTexture){
     int val = 0;
     vector< vec3 > temp_vertices;
@@ -149,6 +167,7 @@ bool Element::load(const char *filename, bool isTexture){
 
 
     std::vector<unsigned int> vertexIndices, uvIndices, normalIndices;
+
 
 
     FILE* file = fopen(filename, "r");
@@ -237,7 +256,6 @@ bool Element::load(const char *filename, bool isTexture){
             unsigned int uvIndex = 0;
             unsigned int normalIndex = normalIndices[i] -1;
 
-
             if (isTexture)
             {
                 uvIndex = uvIndices[i] - 1;
@@ -247,12 +265,10 @@ bool Element::load(const char *filename, bool isTexture){
                 uvIndex = k++;
             }
 
+            // Get the attributes thanks to the index
             vec3 vertex = temp_vertices[ vertexIndex ];
             vec2 uv = temp_uvs[ uvIndex ];
             vec3 normal = temp_normals[ normalIndex ];
-
-            // Get the attributes thanks to the index
-            cout << uv.x << " " << uv.y << endl;
 
             // Put the attributes in buffers
             normals.push_back(normal.x);
@@ -269,29 +285,31 @@ bool Element::load(const char *filename, bool isTexture){
             indices.push_back(i);
 
             if (k==4) {k = 0;}
-
-
         }
-
-
     }
 
     return true;
 }
 
+/**
+ * @brief Element::calculate Calculating the center and the radius for each boundary box
+ */
 void Element::calculate(){
 
     //cout << "size: " << boundaryBox.size() << endl;
     for (unsigned int i=0; i<boundaryBox.size(); i++)
     {
         vec2 min, max;
+        // init
         min.x = 50000.0f;
         min.y = 50000.0f;
         max.x = 0.0f;
         max.y = 0.0f;
-        for (unsigned int j=0; j<((boundaryBox[i]).point).size(); j++)
+        for (unsigned int j=0; j<((boundaryBox[i]).point).size(); j++) // for every element find the minimum coordinate and the maximum coordinate
         {
             //cout << "boundary " << i << " point " << j << ": " << ((boundaryBox[i]).point)[j].x << " " << ((boundaryBox[i]).point)[j].y << endl;
+
+            // search for max
             if ( ((((boundaryBox[i]).point)[j]).x > max.x) || ((((boundaryBox[i]).point)[j]).y > max.y) )
             {
                 max.x = (((boundaryBox[i]).point)[j]).x;
@@ -299,6 +317,7 @@ void Element::calculate(){
                 //cout << "max: " << max.x << " " << max.y << endl;
             }
 
+            // search for min
             if ( ((((boundaryBox[i]).point)[j]).x < min.x) || ((((boundaryBox[i]).point)[j]).y < min.y) )
             {
                 min.x = (((boundaryBox[i]).point)[j]).x;
@@ -321,6 +340,9 @@ void Element::calculate(){
 
 }
 
+/**
+ * @brief Element::setBoundary Calculate the boundary for the models (player)
+ */
 void Element::setBoundary()
 {
     vector<vec2> points;
@@ -332,6 +354,7 @@ void Element::setBoundary()
     max.x = 0.0f;
     max.y = 0.0f;
 
+    // select the biggest and lowest coordinate from the vertex array
     for (unsigned int i=0; i<vertices.size(); i+=3){
         if (vertices[i]>max.x && vertices[i+1]>max.y)
         {
@@ -350,33 +373,41 @@ void Element::setBoundary()
 
     boundaryBox.clear();
 
-    //cout << max.x << " " << max.y << ", " << min.x << " " << min.y << endl;
     box.point = points;
     boundaryBox.push_back(box);
-
-
-
 }
 
 
+/**
+ * @brief Element::move Move the object (player) and collision test
+ * @param x number of pixels
+ * @param y number of pixels
+ * @param z number of pixels
+ * @param box a vector containing the vectors containing the boundary boxes (each vector for each object)
+ * @param force is the movement forced (init move)
+ * @return
+ */
 bool Element::move(GLfloat x, GLfloat y, GLfloat z, vector< vector<boundary> > box, bool force)
 {
-    cout << "Moving..." << endl;
+    if (!force)
+        cout << "Moving..." << endl;
+
     GLfloat d;
     bool intersect = false;
     bool moved = false;
 
+    // saving the original vertices
     vector<GLfloat> temp_vertices;
     for (unsigned int i = 0; i < vertices.size(); i++)
     {
         temp_vertices.push_back(vertices[i]);
     }
 
-
+    // calculating the new coordinates for the player
     setBoundary();
     calculate();
 
-
+    // check the map border
     for (unsigned int i = 0; i < vertices.size(); i+=3)
     {
         vertices[i] += x;
@@ -388,18 +419,23 @@ bool Element::move(GLfloat x, GLfloat y, GLfloat z, vector< vector<boundary> > b
         }
     }
 
-
+    // for every object
     for (unsigned int j=0; j < box.size(); j++)
     {
-
+        // recalculate the coordinates
         setBoundary();
         calculate();
 
+        // seach intersection for the whole array (for instance player vs walls)
         for (unsigned int i = 0; i < box[j].size(); i++)
         {
             //cout << "box: (" << (box[i]).center.x << "," << (box[i]).center.y << ")";
+
+            // calculating the distance
             d = sqrt ( pow( (box[j][i]).center.x - (boundaryBox[0]).center.x, 2) + pow((box[j][i]).center.y - (boundaryBox[0]).center.y, 2));
             //cout << " d: " << d << " R1: " << box[i].R << " R2: " <<  (boundaryBox[0]).R <<  " R1+R2: " << (box[i].R + (boundaryBox[0]).R) << endl;
+
+            // collision detected
             if (d < (box[j][i].R + (boundaryBox[0]).R) ){
                 intersect = true;
                 cout << "Collision detected! (" << (boundaryBox[0]).center.x << "," << (boundaryBox[0]).center.y << ") " << endl;
@@ -407,6 +443,7 @@ bool Element::move(GLfloat x, GLfloat y, GLfloat z, vector< vector<boundary> > b
         }
     }
 
+    // if collision than roll back to the original vertices
     if (intersect && !force)
     {
         for (unsigned int i = 0; i < vertices.size(); i++)
@@ -414,25 +451,9 @@ bool Element::move(GLfloat x, GLfloat y, GLfloat z, vector< vector<boundary> > b
             vertices[i] = temp_vertices[i];
         }
     } else {
+        // move the camera
         moved = true;
     }
-
-
-
-
-
-
-    /*if (!intersect || force)
-    {
-        moved = true;
-        for (unsigned int i = 0; i < vertices.size(); i+=3)
-        {
-            vertices[i] += x;
-            vertices[i+1] += y;
-            vertices[i+2] += z;
-
-        }
-    }*/
 
     return moved;
 }
