@@ -45,6 +45,8 @@
  * Objektumok betöltése: labdák és a játékos avatarja
  * Kameramozgatás
  *
+ * az erőforrásoknak a futtatható állomány mellett mappákban kell lenniük!
+ *
  */
 
 
