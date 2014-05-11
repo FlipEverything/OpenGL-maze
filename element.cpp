@@ -1,6 +1,10 @@
 #include "element.h"
 
 
+Element::Element() {}
+Element::~Element() { }
+
+
 void Element::printVector(vector<GLfloat> value, int numberOfCoords)
 {
     int counter = 1;
@@ -28,26 +32,6 @@ void Element::printVector(vector<GLuint> value, int numberOfCoords)
     }
 }
 
-void Element::move(GLfloat x, GLfloat y, GLfloat z)
-{
-    /*for( vector<GLfloat>::const_iterator i = vertices->begin(); i != vertices->end(); ++i)
-    {
-        cout << *i << ' ';
-        vertices->push_back(*i + x);
-
-    }*/
-
-    for (unsigned int i = 0; i < vertices.size(); i+=3)
-    {
-        vertices[i] += x;
-        vertices[i+1] += y;
-        vertices[i+2] += z;
-    }
-}
-
-Element::Element() {}
-Element::~Element() { }
-
 void Element::render(GLuint textures[])
 {
     // render the vertex array
@@ -66,8 +50,9 @@ void Element::render(GLuint textures[])
  * @param j Current position in the maze
  * @param count number of the current element
  */
-void Element::GenerateSide(int coords[], int i, int j, int count, int orientation, float sizeX, float sizeY, float sizeZ){
+void Element::GenerateSide(int coords[], int i, int j, int count, int orientation, float sizeX, float sizeY, float sizeZ, bool isBoundary){
     int x, y, z, index, texture;
+    boundary box;
 
     // Vertex coordinates
     for (int k=0;k<4;k++) // 1 side - 4 vertex
@@ -78,6 +63,14 @@ void Element::GenerateSide(int coords[], int i, int j, int count, int orientatio
         vertices.push_back( x ); // x coord
         vertices.push_back( y ); // y coord
         vertices.push_back( z ); // z coord
+
+        if (isBoundary){
+            vec2 b;
+            b.x = x;
+            b.y = y;
+            //cout << "x: " << x << "y: " << y << endl;
+            box.point.push_back(b);
+        }
 
         // Normalvector coordinates
         if (orientation==0){
@@ -106,6 +99,9 @@ void Element::GenerateSide(int coords[], int i, int j, int count, int orientatio
             normals.push_back(0.0);
         }
 
+    }
+    if (isBoundary){
+        boundaryBox.push_back(box);
     }
 
     // Index coordinates
@@ -183,25 +179,23 @@ bool Element::load(const char *filename){
                 // Probably a comment, eat up the rest of the line
                 char stupidBuffer[1000];
                 char* ignore = fgets(stupidBuffer, 1000, file);
-                cerr << "Ignored line: " << ignore << val << endl;
+                //cerr << "Ignored line: " << ignore << val << endl;
             }
 
         }
 
+        cout << " asdfasdas" << endl;
         // For each vertex of each triangle
         for( unsigned int i=0; i<vertexIndices.size(); i++ ){
             // Get the indices of its attributes
-            unsigned int vertexIndex = vertexIndices[i];
-            unsigned int uvIndex = uvIndices[i];
-            unsigned int normalIndex = normalIndices[i];
-
-            cout << vertexIndex << endl;
-
+            unsigned int vertexIndex = vertexIndices[i] -1;
+            unsigned int uvIndex = uvIndices[i] - 1;
+            unsigned int normalIndex = normalIndices[i] -1;
 
             // Get the attributes thanks to the index
-            vec3 vertex = temp_vertices[ vertexIndex-1 ];
-            vec2 uv = temp_uvs[ uvIndex-1 ];
-            vec3 normal = temp_normals[ normalIndex-1 ];
+            vec3 vertex = temp_vertices[ vertexIndex ];
+            vec2 uv = temp_uvs[ uvIndex ];
+            vec3 normal = temp_normals[ normalIndex ];
 
             // Put the attributes in buffers
             normals.push_back(normal.x);
@@ -217,12 +211,173 @@ bool Element::load(const char *filename){
 
             indices.push_back(i);
 
+
         }
 
 
     }
 
     return true;
+}
+
+void Element::calculate(){
+
+    //cout << "size: " << boundaryBox.size() << endl;
+    for (unsigned int i=0; i<boundaryBox.size(); i++)
+    {
+        vec2 min, max;
+        min.x = 50000.0f;
+        min.y = 50000.0f;
+        max.x = 0.0f;
+        max.y = 0.0f;
+        for (unsigned int j=0; j<((boundaryBox[i]).point).size(); j++)
+        {
+            //cout << "boundary " << i << " point " << j << ": " << ((boundaryBox[i]).point)[j].x << " " << ((boundaryBox[i]).point)[j].y << endl;
+            if ( ((((boundaryBox[i]).point)[j]).x > max.x) || ((((boundaryBox[i]).point)[j]).y > max.y) )
+            {
+                max.x = (((boundaryBox[i]).point)[j]).x;
+                max.y = (((boundaryBox[i]).point)[j]).y;
+                //cout << "max: " << max.x << " " << max.y << endl;
+            }
+
+            if ( ((((boundaryBox[i]).point)[j]).x < min.x) || ((((boundaryBox[i]).point)[j]).y < min.y) )
+            {
+                min.x = (((boundaryBox[i]).point)[j]).x;
+                min.y = (((boundaryBox[i]).point)[j]).y;
+                //cout << "min: " << min.x << " " << min.y << endl;
+            }
+        }
+
+        //cout << " ---------------------- " << endl;
+        //cout << "min: " << min.x << " " << min.y << endl;
+        //cout << "max: " << max.x << " " << max.y << endl;
+
+        (boundaryBox[i]).center.x = (max.x + min.x) / 2;
+        (boundaryBox[i]).center.y = (max.y + min.y) / 2;
+        //cout << (boundaryBox[i]).center.x << " " << (boundaryBox[i]).center.y << endl;
+        (boundaryBox[i]).R = sqrt( pow((max.x-(boundaryBox[i]).center.x),2) + pow((max.y-(boundaryBox[i]).center.y),2) *0.75f );
+
+        //cout << (boundaryBox[i]).R << endl;
+    }
+
+}
+
+void Element::setBoundary()
+{
+    vector<vec2> points;
+    boundary box;
+
+    vec2 max, min;
+    min.x = 50000.0f;
+    min.y = 50000.0f;
+    max.x = 0.0f;
+    max.y = 0.0f;
+
+    for (unsigned int i=0; i<vertices.size(); i+=3){
+        if (vertices[i]>max.x && vertices[i+1]>max.y)
+        {
+            max.x = vertices[i];
+            max.y = vertices[i+1];
+        }
+        if (vertices[i]<min.x && vertices[i+1]<min.y)
+        {
+            min.x = vertices[i];
+            min.y = vertices[i+1];
+        }
+    }
+
+    points.push_back(min);
+    points.push_back(max);
+
+    boundaryBox.clear();
+
+    //cout << max.x << " " << max.y << ", " << min.x << " " << min.y << endl;
+    box.point = points;
+    boundaryBox.push_back(box);
+
+
+
+}
+
+
+bool Element::move(GLfloat x, GLfloat y, GLfloat z, vector<boundary> box, bool force)
+{
+    cout << "Moving..." << endl;
+    GLfloat d;
+    bool intersect = false;
+    bool moved = false;
+
+    vector<GLfloat> temp_vertices;
+
+    for (unsigned int i = 0; i < vertices.size(); i++)
+    {
+        temp_vertices.push_back(vertices[i]);
+    }
+
+    for (unsigned int i = 0; i < vertices.size(); i+=3)
+    {
+        vertices[i] += x;
+        vertices[i+1] += y;
+        vertices[i+2] += z;
+        if (vertices[i]<0 || vertices[i+1]<0)
+        {
+            intersect = true;
+        }
+    }
+
+    setBoundary();
+    calculate();
+
+    vec3 max;
+    max.x = 0.0f;
+    max.y = 0.0f;
+    for (unsigned int i = 0; i < box.size(); i++)
+    {
+        cout << "box: (" << (box[i]).center.x << "," << (box[i]).center.y << ")";
+        d = sqrt ( pow( (box[i]).center.x - (boundaryBox[0]).center.x, 2) + pow((box[i]).center.y - (boundaryBox[0]).center.y, 2));
+        cout << " d: " << d << " R1: " << box[i].R << " R2: " <<  (boundaryBox[0]).R <<  " R1+R2: " << (box[i].R + (boundaryBox[0]).R) << endl;
+        if (d < (box[i].R + (boundaryBox[0]).R) ){
+            intersect = true;
+        }
+        if ( ((box[i]).center.x > max.x) || ((box[i]).center.y > max.y) )
+        {
+            max.x = (box[i]).center.x;
+            max.y = (box[i]).center.y;
+            max.z = (box[i]).R;
+        }
+    }
+
+    for (unsigned int i = 0; i < vertices.size(); i+=3)
+    {
+        if (vertices[i]>max.x+max.z || vertices[i+1]>max.y+max.z)
+        {
+            intersect = true;
+        }
+    }
+
+    if (intersect && !force)
+    {
+        for (unsigned int i = 0; i < vertices.size(); i++)
+        {
+            vertices[i] = temp_vertices[i];
+        }
+    } else {
+        moved = true;
+    }
+
+    /*if (!intersect || force)
+    {
+        moved = true;
+        for (unsigned int i = 0; i < vertices.size(); i+=3)
+        {
+            vertices[i] += x;
+            vertices[i+1] += y;
+            vertices[i+2] += z;
+
+        }
+    }*/
+
+    return moved;
 }
 
 
@@ -274,4 +429,14 @@ int Element::getTextureId() const
 void Element::setTextureId(int value)
 {
     textureId = value;
+}
+
+vector<boundary> Element::getBoundaryBox() const
+{
+    return boundaryBox;
+}
+
+void Element::setBoundaryBox(const vector<boundary> &value)
+{
+    boundaryBox = value;
 }

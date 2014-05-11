@@ -18,6 +18,7 @@
 #include <string>
 #include <string.h>
 #include <cstdio>
+#include <math.h>
 
 using namespace std;
 
@@ -32,22 +33,30 @@ typedef struct {
     GLfloat y;
 } vec2;
 
+typedef struct{
+    vector<vec2> point;
+    vec2 center;
+    GLfloat R;
+} boundary;
+
+
 class Element {
 private:
     vector<GLfloat> vertices;
     vector<GLuint> indices;
     vector<GLfloat> texCoords;
     vector<GLfloat> normals;
+    vector<boundary> boundaryBox;
     int textureId;
 public:
     Element();
     ~Element();
 
     void render(GLuint textures[]);
-    void move(GLfloat x, GLfloat y, GLfloat z);
+    bool move(GLfloat x, GLfloat y, GLfloat z, vector<boundary> box, bool force);
     void printVector(vector<GLfloat> value, int numberOfCoords);
     void printVector(vector<GLuint> value, int numberOfCoords);
-    void GenerateSide(int coords[], int i, int j, int count, int orientation, float sizeX, float sizeY, float sizeZ);
+    void GenerateSide(int coords[], int i, int j, int count, int orientation, float sizeX, float sizeY, float sizeZ, bool isBoundary);
     bool load(const char *filename);
 
     vector<GLfloat> getVertices() const;
@@ -60,6 +69,10 @@ public:
     void setNormals(const vector<GLfloat> &value);
     int getTextureId() const;
     void setTextureId(int value);
+    void calculate();
+    void setBoundary();
+    vector<boundary> getBoundaryBox() const;
+    void setBoundaryBox(const vector<boundary> &value);
 };
 
 #endif // GAMEELEMENT_H

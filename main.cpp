@@ -187,10 +187,12 @@ void SetupRC()
 
     loadTextures();
     maze.generateCubes();
+    maze.wall.calculate();
+
     maze.player.load("model/MinecraftPlayer.obj");
     //maze.player.printVector(maze.player.getTexCoords(),2);
-    maze.player.move(maze.camera[0], 0, 0);
 
+    maze.player.move(maze.camera[0], 0.4f, 0, maze.wall.getBoundaryBox(), true);
 
     glewInit();
     glClearColor( 0.878f, 0.878f, 0.878f, 1.0f ); //background
@@ -220,15 +222,21 @@ void SpecialKeys(int key, int x, int y)
     }*/
 
     if(key == GLUT_KEY_LEFT) { // move
-        dirX = -maze.sizeX/maze.speed;
+        dirX = -maze.sizeX/20;
+
+        maze.center[1] -= sin(dirX * M_PI / 180) * cos(dirX * M_PI / 180);
+        maze.center[0] -= -cos(dirX * M_PI / 180) * cos(dirX * M_PI / 180);
     }
 
     if(key == GLUT_KEY_RIGHT) { // move
-        dirX = maze.sizeX/maze.speed;
-    }
+        dirX = maze.sizeX/20;
 
-    maze.center[0] += dirX;
-    maze.center[1] += dirZ;
+        maze.center[1] += sin(dirX * M_PI / 180) * cos(dirX * M_PI / 180);
+        maze.center[0] += -cos(dirX * M_PI / 180) * cos(dirX * M_PI / 180);
+    }    
+
+
+
 
     // F1: switch from fps to upper camera (and backwards)
     if(key == GLUT_KEY_F1) {
@@ -313,14 +321,22 @@ void keyOperations(){
         dirX = maze.sizeX/speed;
     }
 
+    if (dirZ!=0 || dirX != 0)
+    {
+        bool moved = maze.player.move(dirX, dirZ, 0, maze.wall.getBoundaryBox(), false);
+        if (moved)
+        {
+            maze.camera[0] += dirX;
+            maze.camera[1] += dirZ;
 
-    maze.camera[0] += dirX;
-    maze.camera[1] += dirZ;
+            maze.center[0] += dirX;
+            maze.center[1] += dirZ;
+        }
+    }
 
-    maze.center[0] += dirX;
-    maze.center[1] += dirZ;
 
-    maze.player.move(dirX, dirZ, 0);
+
+
 }
 
 void Timer(int value)

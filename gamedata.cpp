@@ -95,11 +95,11 @@ void GameData::generateCubes()
 
                   // Call the vertex generator
 
-                  wall.GenerateSide(front, i, j, count++, -1, sizeX, sizeY, sizeZ);
-                  wall.GenerateSide(top, i, j, count++, 2, sizeX, sizeY, sizeZ);
-                  wall.GenerateSide(left, i, j, count++, -1, sizeX, sizeY, sizeZ);
-                  wall.GenerateSide(right, i, j, count++, -3, sizeX, sizeY, sizeZ);
-                  wall.GenerateSide(back, i, j, count++, 2, sizeX, sizeY, sizeZ);
+                  wall.GenerateSide(front, i, j, count++, -1, sizeX, sizeY, sizeZ,false);
+                  wall.GenerateSide(top, i, j, count++, 2, sizeX, sizeY, sizeZ,true);
+                  wall.GenerateSide(left, i, j, count++, -1, sizeX, sizeY, sizeZ,false);
+                  wall.GenerateSide(right, i, j, count++, -3, sizeX, sizeY, sizeZ,false);
+                  wall.GenerateSide(back, i, j, count++, 2, sizeX, sizeY, sizeZ,false);
               }
 
           }
@@ -114,7 +114,7 @@ void GameData::generateCubes()
           {
               // Draw a panel for the every block of the maze
               int floor_side[] = {0,1,0, 0,0,0, 1,0,0, 1,1,0};
-              floor.GenerateSide(floor_side, i, j, floorCount++, 2, sizeX, sizeY, sizeZ);
+              floor.GenerateSide(floor_side, i, j, floorCount++, 2, sizeX, sizeY, sizeZ,false);
           }
       }
 

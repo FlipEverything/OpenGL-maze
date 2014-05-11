@@ -28,6 +28,7 @@
     #include <gamedata.h>
     #include <element.h>
 
+
 void keyUp();
 void keyOperations();
 #endif // MAIN_H
